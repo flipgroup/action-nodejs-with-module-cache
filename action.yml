@@ -1,0 +1,51 @@
+name: Node.js with node_modules cache
+
+inputs:
+  version:
+    description: Node.js version.
+    default:
+  version-file:
+    description: Node.js version from file. Used in place of `version`.
+    default:
+  node-modules-path:
+    description: Path to node_modules.
+    default: node_modules
+  additional-cache-path:
+    description: Optional path(s) to be included alongside node_modules.
+    default:
+  package-lock-path:
+    description: Path to package-lock.json.
+    default: package-lock.json
+  cache-key-suffix:
+    description: Optional cache key suffix.
+    default:
+
+outputs:
+  cache-hit:
+    description: Boolean value to indicate cache hit.
+    value: ${{ steps.cache-nodemodules.outputs.cache-hit }}
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ inputs.version }}
+        node-version-file: ${{ inputs.version-file }}
+    - name: Construct cache key
+      id: cache-key
+      run: |
+        versionNode=$(node --version)
+        versionNpm=$(npm --version)
+        cacheKeyRoot="${{ runner.os }}-nodemodules${{ inputs.cache-key-suffix && format('-{0}',inputs.cache-key-suffix) }}-${versionNode#v}-$versionNpm-"
+        echo "hashed=${cacheKeyRoot}${{ hashFiles(inputs.package-lock-path) }}" >>"$GITHUB_OUTPUT"
+      shell: bash
+    - name: Setup node_modules cache
+      id: cache-nodemodules
+      uses: actions/cache@v3
+      with:
+        path: |
+          ${{ inputs.node-modules-path }}
+          ${{ inputs.additional-cache-path }}
+        key: ${{ steps.cache-key.outputs.hashed }}
