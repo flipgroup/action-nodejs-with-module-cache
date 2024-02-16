@@ -29,7 +29,7 @@ runs:
   using: composite
   steps:
     - name: Setup Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ inputs.version }}
         node-version-file: ${{ inputs.version-file }}
@@ -38,14 +38,14 @@ runs:
       run: |
         versionNode=$(node --version)
         versionNpm=$(npm --version)
-        cacheKeyRoot="${{ runner.os }}-nodemodules${{ inputs.cache-key-suffix && format('-{0}',inputs.cache-key-suffix) }}-${versionNode#v}-$versionNpm-"
+        cacheKeyRoot="nodemodules-${{ runner.os }}${{ inputs.cache-key-suffix && format('-{0}',inputs.cache-key-suffix) }}-${versionNode#v}-$versionNpm-"
         echo "hashed=${cacheKeyRoot}${{ hashFiles(inputs.package-lock-path) }}" >>"$GITHUB_OUTPUT"
       shell: bash
     - name: Setup node_modules cache
       id: cache-nodemodules
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
+        key: ${{ steps.cache-key.outputs.hashed }}
         path: |
           ${{ inputs.node-modules-path }}
           ${{ inputs.additional-cache-path }}
-        key: ${{ steps.cache-key.outputs.hashed }}
